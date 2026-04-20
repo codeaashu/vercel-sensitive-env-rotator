@@ -51,6 +51,9 @@ This CLI automates the parts that are easy to get wrong.
 - Preserves comments where possible
 - Detects Vercel ciphertext blobs and converts unreadable exports into explicit placeholders
 - Refuses to perform writes when manifest values are clearly unresolved
+- Retries transient API failures with bounded exponential backoff
+- Writes a step journal during apply runs so interrupted rotations can resume safely
+- Preserves shared-env project bindings with fail-closed validation
 
 ## Requirements
 
@@ -121,6 +124,24 @@ VERCEL_TOKEN=... vercel-sensitive-envs \
   --yes
 ```
 
+Apply runs create a local journal by default at:
+
+`./.vercel-sensitive-envs.journal.json`
+
+If a run is interrupted, resume with the same arguments plus `--resume`:
+
+```bash
+VERCEL_TOKEN=... vercel-sensitive-envs \
+  --scope project \
+  --project your-project-name \
+  --team-slug your-team-slug \
+  --manifest ./vercel-sensitive-rotation.generated.json \
+  --yes \
+  --resume
+```
+
+You can override the journal location with `--journal ./path/to/journal.json`.
+
 ### 5. Redeploy affected environments
 
 After rotating environment variables, you will usually want to trigger fresh deployments in Vercel so new builds and runtime instances pick up the updated values.
@@ -184,6 +205,18 @@ npm run rotate -- \
   --manifest ./vercel-sensitive-rotation.generated.json
 ```
 
+Resume an interrupted apply run:
+
+```bash
+npm run rotate -- \
+  --scope project \
+  --project your-project-name \
+  --team-slug your-team-slug \
+  --manifest ./vercel-sensitive-rotation.generated.json \
+  --yes \
+  --resume
+```
+
 ## Scope Modes
 
 ### Project env vars
@@ -207,6 +240,7 @@ Use `--scope shared` with:
 - Even the per-ID decrypted endpoint may still refuse to return plaintext for some `encrypted` vars.
 - Shared env var export is more limited than project env export.
 - Branch-scoped preview vars are skipped by default. Pass `--allow-git-branch-vars` if you explicitly want them.
+- Shared env rotation fails closed when existing project-binding metadata is inconsistent or unreadable.
 
 Because of those API limitations, this tool treats unreadable values as unresolved inputs, not reusable outputs.
 
@@ -218,6 +252,7 @@ This tool is intended to be run locally and is relatively safe for that use case
 - It does not send secrets to any third-party service beyond Vercel.
 - It does not persist your Vercel token unless you choose to do that yourself.
 - Generated manifest files can contain real plaintext secrets and should be treated as sensitive files.
+- Generated manifest, unresolved report, and journal files are written with restrictive owner-only permissions.
 
 Recommended practices:
 
