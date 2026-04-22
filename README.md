@@ -4,7 +4,7 @@
 
 ---
 
-<div align="center">
+<!--<div align="center">
 <table>
 <tr>
 <td width="120" align="center">
@@ -18,7 +18,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/warrioraashuu?style=social)](https://twitter.com/intent/follow?screen_name=warrioraashuu)
 </tr>
 </table>
-</div>
+</div>-->
 
 
 It is designed for a common incident-response workflow:
